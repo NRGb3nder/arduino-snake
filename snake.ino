@@ -9,7 +9,8 @@
 #define     START_LENGTH          2
 #define     START_ROW             4
 #define     START_COLUMN          4
-#define     DELAY_TIME            400
+#define     DELAY_GENERAL         400
+#define     DELAY_LETTER          200
 #define     X_PORT                1
 #define     Y_PORT                0
 #define     SENSIVITY_LEFT        700
@@ -17,6 +18,8 @@
 #define     SENSIVITY_DOWN        600
 #define     SENSIVITY_UP          400
 #define     NOT_EMPTY             -1
+#define     STR_GAMEOVER_LENGTH   40
+#define     STR_STARTGAME_LENGTH  43
 
 typedef struct {
     int time_to_live;
@@ -39,7 +42,7 @@ typedef struct {
 LedControl lc = LedControl(12, 11, 10, 1);
 cell field[FIELD_SIZE][FIELD_SIZE];
 player snake = {START_LENGTH, GO_UP, {START_ROW, START_COLUMN}};
-bool gameover = false;
+bool gameover = false, gamestarted = false;
 
 void initialize_field();
 void create_apple();
@@ -48,6 +51,10 @@ void refresh_field();
 void move_snake();
 void eat_apple();
 void show_field();
+void startgame_sequence();
+void gameover_sequence();
+void output_ledstr(byte str_output[], int strsize);
+void show_screen(byte screen[FIELD_SIZE]);
 
 void setup() {
     lc.shutdown(0, false);
@@ -59,15 +66,19 @@ void setup() {
 }
 
 void loop() {
+    while (!gamestarted)
+        startgame_sequence();
+    lc.clearDisplay(0);
     while (!gameover) {
         get_direction();
         refresh_field();
         move_snake();
         if (!gameover) {
             show_field();
-            delay(DELAY_TIME);
+            delay(DELAY_GENERAL);
         }
     }
+    gameover_sequence();
 }
 
 void initialize_field() {
@@ -111,7 +122,7 @@ void create_apple() {
 void get_direction() {
     int x_input = analogRead(X_PORT);
     int y_input = analogRead(Y_PORT);
-    
+
     if (x_input > SENSIVITY_LEFT && snake.movement != GO_RIGHT)
         snake.movement = GO_LEFT;
     else if (x_input < SENSIVITY_RIGHT && snake.movement != GO_LEFT)
@@ -160,7 +171,7 @@ void move_snake() {
 
 void eat_apple() {
     int i, j;
-    
+
     snake.length++;
     for (i = 0; i < FIELD_SIZE; i++)
         for (j = 0; j < FIELD_SIZE; j++) {
@@ -180,4 +191,70 @@ void show_field() {
             else
                 lc.setLed(0, i, j, false);
         }
+}
+
+void gameover_sequence() {
+    byte str_gameover[STR_GAMEOVER_LENGTH] = {
+            B00000000, B01111110, B10001001, B10001111,                         // 'G'
+            B00000000, B01111111, B10001000, B01111111,                         // 'A'
+            B00000000, B11111111, B01000000, B00100000, B01000000, B11111111,   // 'M'
+            B00000000, B11111111, B10010001, B10010001,                         // 'E'
+            B00000000, B00000000, B00000000,                                    // ' '
+            B00000000, B01111110, B10000001, B10000001, B01111110,              // 'O'
+            B00000000, B11111110, B00000001, B11111110,                         // 'V'
+            B00000000, B11111111, B10010001, B10010001,                         // 'E'
+            B00000000, B11111111, B10010000, B01101111,                         // 'R'
+            B00000000, B11111101                                                // '!'
+    };
+
+    output_ledstr(str_gameover, STR_GAMEOVER_LENGTH);
+    gamestarted = false;
+}
+
+void startgame_sequence() {
+    byte str_startgame[STR_STARTGAME_LENGTH] = {
+            B00000000, B11111111, B10010000, B01100000,                         // 'P'
+            B00000000, B11111111, B10010000, B01101111,                         // 'R'
+            B00000000, B11111111, B10010001, B10010001,                         // 'E'
+            B00000000, B01100010, B10010001, B01001110,                         // 'S'
+            B00000000, B01100010, B10010001, B01001110,                         // 'S'
+            B00000000, B00000000, B00000000,                                    // ' '
+            B00000000, B01100010, B10010001, B01001110,                         // 'S'
+            B00000000, B10000000, B11111111, B10000000,                         // 'T'
+            B00000000, B01111111, B10001000, B01111111,                         // 'A'
+            B00000000, B11111111, B10010000, B01101111,                         // 'R'
+            B00000000, B10000000, B11111111, B10000000,                         // 'T'
+    };
+
+    output_ledstr(str_startgame, STR_STARTGAME_LENGTH);
+}
+
+void output_ledstr(byte str_output[], int strsize) {
+    int i, j;
+    byte screen[FIELD_SIZE];
+    for (i = 0; i < FIELD_SIZE; i++)
+        screen[i] = B00000000;
+    show_screen(screen);
+
+    for (i = 0; i < strsize; i++) {
+        for (j = 0; j < (FIELD_SIZE - 1); j++)
+            screen[j] = screen[j + 1];
+        screen[j] = str_output[i];
+        show_screen(screen);
+    }
+
+    for (i = 0; i < FIELD_SIZE; i++) {
+        for (j = 0; j < (FIELD_SIZE - 1); j++)
+            screen[j] = screen[j + 1];
+        screen[j] = B00000000;
+        show_screen(screen);
+    }
+}
+
+void show_screen(byte screen[FIELD_SIZE]) {
+    int i;
+
+    for (i = 0; i < FIELD_SIZE; i++)
+        lc.setColumn(0, i, screen[i]);
+    delay(DELAY_LETTER);
 }
