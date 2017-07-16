@@ -23,10 +23,10 @@
 #define     LIMIT_X_LOW           400
 #define     LIMIT_Y_HIGH          600
 #define     LIMIT_Y_LOW           400
-#define     TONE_PIN              3
-#define     TONE_MINLEVEL         523
-#define     TONE_GAP              10
-#define     TONE_DURATION         250
+#define     TONE_PIN              4
+#define     TONE_MINLEVEL         3000
+#define     TONE_GAP              100
+#define     TONE_DURATION         100
 
 typedef struct {
     int time_to_live;
