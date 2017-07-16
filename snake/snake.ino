@@ -9,7 +9,7 @@
 #define     START_ROW             4
 #define     START_COLUMN          4
 #define     DELAY_GENERAL         400
-#define     DELAY_LETTER          200
+#define     DELAY_LETTER          100
 #define     X_PORT                1
 #define     Y_PORT                0
 #define     SENSIVITY_LEFT        700
@@ -23,6 +23,10 @@
 #define     LIMIT_X_LOW           400
 #define     LIMIT_Y_HIGH          600
 #define     LIMIT_Y_LOW           400
+#define     TONE_PIN              3
+#define     TONE_MINLEVEL         523
+#define     TONE_GAP              10
+#define     TONE_DURATION         250
 
 typedef struct {
     int time_to_live;
@@ -40,12 +44,13 @@ typedef struct {
     int length;
     enum direction movement;
     position head;
+    int sound_frequency;
 } player;
 
 LedControl lc = LedControl(12, 11, 10, 1);
 cell field[FIELD_SIZE][FIELD_SIZE];
-player snake = {START_LENGTH, GO_UP, {START_ROW, START_COLUMN}};
-bool gameover = false, gamestarted = false, skip_flag = false;
+player snake;
+bool gameover = false, gamestarted = false, continue_flag = false;
 
 void initialize_field();
 void create_apple();
@@ -66,12 +71,16 @@ void setup() {
     lc.setIntensity(0, MEDIUM_LED_INTENSITY);
     lc.clearDisplay(0);
     initialize_field();
+    snake = {START_LENGTH, GO_UP, {START_ROW, START_COLUMN}, TONE_MINLEVEL};
     create_apple();
 }
 
 void loop() {
-    while (!gamestarted)
-        startgame_sequence();
+    if (gamestarted)
+        setup();
+    else
+        while (!gamestarted)
+            startgame_sequence();
     lc.clearDisplay(0);
     while (!gameover) {
         get_direction();
@@ -182,6 +191,10 @@ void eat_apple() {
             if (field[i][j].time_to_live != 0)
                 field[i][j].time_to_live++;
         }
+
+    tone(TONE_PIN, snake.sound_frequency, TONE_DURATION);
+    snake.sound_frequency += TONE_GAP;
+
     field[snake.head.row][snake.head.column].has_apple = false;
 }
 
@@ -208,14 +221,23 @@ void gameover_sequence() {
             B00000000, B11111110, B00000001, B11111110,                         // 'V'
             B00000000, B11111111, B10010001, B10010001,                         // 'E'
             B00000000, B11111111, B10010000, B01101111,                         // 'R'
-            B00000000, B11111101                                                // '!'
+            B00000000, B11111101,                                               // '!'
+            B00000000, B00000000, B00000000,                                    // ' '
+            B00000000, B10000000, B11111111, B10000000,                         // 'T'
+            B00000000, B11111111, B10010000, B01101111,                         // 'R'
+            B00000000, B11100000, B00011111, B11100000,                         // 'Y'
+            B00000000, B00000000, B00000000,                                    // ' '
+            B00000000, B01111111, B10001000, B01111111,                         // 'A'
+            B00000000, B01111110, B10001001, B10001111,                         // 'G'
+            B00000000, B01111111, B10001000, B01111111,                         // 'A'
+            B00000000, B10000001, B11111111, B10000001,                         // 'I'
+            B00000000, B11111111, B00100000, B00010000, B00001000, B11111111    // 'N'
     };
 
     output_ledstr(str_gameover, STR_GAMEOVER_LENGTH);
-    gamestarted = false;
     gameover = false;
-    if (skip_flag)
-        skip_flag = false;
+    if (continue_flag)
+        continue_flag = false;
 }
 
 void startgame_sequence() {
@@ -234,8 +256,8 @@ void startgame_sequence() {
     };
 
     output_ledstr(str_startgame, STR_STARTGAME_LENGTH);
-    if (skip_flag) {
-        skip_flag = false;
+    if (continue_flag) {
+        continue_flag = false;
         gamestarted = true;
     }
 }
@@ -265,7 +287,7 @@ void output_ledstr(byte str_output[], int strsize) {
 void show_screen(byte screen[FIELD_SIZE]) {
     int i;
 
-    if (!skip_flag) {
+    if (!continue_flag) {
         for (i = 0; i < FIELD_SIZE; i++)
             lc.setColumn(0, i, screen[i]);
         get_skipcond();
@@ -278,5 +300,5 @@ void get_skipcond() {
     int y_input = analogRead(Y_PORT);
 
     if (x_input > LIMIT_X_HIGH || x_input < LIMIT_X_LOW || y_input > LIMIT_Y_HIGH || y_input < LIMIT_Y_LOW)
-        skip_flag = true;
+        continue_flag = true;
 }
