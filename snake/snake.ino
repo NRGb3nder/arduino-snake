@@ -1,5 +1,4 @@
 #include "stdbool.h"
-#include "time.h"
 #include "stdlib.h"
 #include "math.h"
 #include "LedControl.h"
@@ -20,6 +19,10 @@
 #define     NOT_EMPTY             -1
 #define     STR_GAMEOVER_LENGTH   40
 #define     STR_STARTGAME_LENGTH  43
+#define     LIMIT_X_HIGH          600
+#define     LIMIT_X_LOW           400
+#define     LIMIT_Y_HIGH          600
+#define     LIMIT_Y_LOW           400
 
 typedef struct {
     int time_to_live;
@@ -42,7 +45,7 @@ typedef struct {
 LedControl lc = LedControl(12, 11, 10, 1);
 cell field[FIELD_SIZE][FIELD_SIZE];
 player snake = {START_LENGTH, GO_UP, {START_ROW, START_COLUMN}};
-bool gameover = false, gamestarted = false;
+bool gameover = false, gamestarted = false, skip_flag = false;
 
 void initialize_field();
 void create_apple();
@@ -55,13 +58,14 @@ void startgame_sequence();
 void gameover_sequence();
 void output_ledstr(byte str_output[], int strsize);
 void show_screen(byte screen[FIELD_SIZE]);
+void get_skipcond();
+
 
 void setup() {
     lc.shutdown(0, false);
     lc.setIntensity(0, MEDIUM_LED_INTENSITY);
     lc.clearDisplay(0);
     initialize_field();
-    srand(time(NULL));  // setting seed for apple generation
     create_apple();
 }
 
@@ -209,6 +213,9 @@ void gameover_sequence() {
 
     output_ledstr(str_gameover, STR_GAMEOVER_LENGTH);
     gamestarted = false;
+    gameover = false;
+    if (skip_flag)
+        skip_flag = false;
 }
 
 void startgame_sequence() {
@@ -227,6 +234,10 @@ void startgame_sequence() {
     };
 
     output_ledstr(str_startgame, STR_STARTGAME_LENGTH);
+    if (skip_flag) {
+        skip_flag = false;
+        gamestarted = true;
+    }
 }
 
 void output_ledstr(byte str_output[], int strsize) {
@@ -254,7 +265,18 @@ void output_ledstr(byte str_output[], int strsize) {
 void show_screen(byte screen[FIELD_SIZE]) {
     int i;
 
-    for (i = 0; i < FIELD_SIZE; i++)
-        lc.setColumn(0, i, screen[i]);
-    delay(DELAY_LETTER);
+    if (!skip_flag) {
+        for (i = 0; i < FIELD_SIZE; i++)
+            lc.setColumn(0, i, screen[i]);
+        get_skipcond();
+        delay(DELAY_LETTER);
+    }
+}
+
+void get_skipcond() {
+    int x_input = analogRead(X_PORT);
+    int y_input = analogRead(Y_PORT);
+
+    if (x_input > LIMIT_X_HIGH || x_input < LIMIT_X_LOW || y_input > LIMIT_Y_HIGH || y_input < LIMIT_Y_LOW)
+        skip_flag = true;
 }
