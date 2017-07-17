@@ -10,6 +10,7 @@
 #define     START_COLUMN          4
 #define     DELAY_GENERAL         400
 #define     DELAY_LETTER          100
+#define     DELAY_GAMEOVER        800
 #define     X_PORT                1
 #define     Y_PORT                0
 #define     SENSIVITY_LEFT        700
@@ -17,7 +18,7 @@
 #define     SENSIVITY_DOWN        600
 #define     SENSIVITY_UP          400
 #define     NOT_EMPTY             -1
-#define     STR_GAMEOVER_LENGTH   40
+#define     STR_GAMEOVER_LENGTH   80
 #define     STR_STARTGAME_LENGTH  43
 #define     LIMIT_X_HIGH          600
 #define     LIMIT_X_LOW           400
@@ -27,6 +28,11 @@
 #define     TONE_MINLEVEL         3000
 #define     TONE_GAP              100
 #define     TONE_DURATION         100
+#define     TONE_CORRECTION       20
+#define     CONTROL_XCORRECTION   -507
+#define     CONTROL_YCORRECTION   -507
+#define     CONTROL_NEUTRALZONE   50
+
 
 typedef struct {
     int time_to_live;
@@ -133,17 +139,24 @@ void create_apple() {
 }
 
 void get_direction() {
-    int x_input = analogRead(X_PORT);
-    int y_input = analogRead(Y_PORT);
+    int x_input = analogRead(X_PORT) + CONTROL_XCORRECTION;
+    int y_input = - (analogRead(Y_PORT) + CONTROL_YCORRECTION);
 
-    if (x_input > SENSIVITY_LEFT && snake.movement != GO_RIGHT)
-        snake.movement = GO_LEFT;
-    else if (x_input < SENSIVITY_RIGHT && snake.movement != GO_LEFT)
-        snake.movement = GO_RIGHT;
-    else if (y_input > SENSIVITY_DOWN && snake.movement != GO_UP)
-        snake.movement = GO_DOWN;
-    else if (y_input < SENSIVITY_UP && snake.movement != GO_DOWN)
-        snake.movement = GO_UP;
+    if ((x_input * x_input + y_input * y_input) > CONTROL_NEUTRALZONE * CONTROL_NEUTRALZONE) {
+        if (y_input > abs(x_input)) {
+            if (snake.movement != GO_DOWN)
+                snake.movement = GO_UP;
+        } else if (y_input < -abs(x_input)) {
+            if (snake.movement != GO_UP)
+                snake.movement = GO_DOWN;
+        } else if (x_input < -CONTROL_NEUTRALZONE) {
+            if (snake.movement != GO_RIGHT)
+                snake.movement = GO_LEFT;
+        } else if (x_input > CONTROL_NEUTRALZONE) {
+            if (snake.movement != GO_LEFT)
+                snake.movement = GO_RIGHT;
+        }
+    }
 }
 
 void refresh_field() {
@@ -233,6 +246,24 @@ void gameover_sequence() {
             B00000000, B10000001, B11111111, B10000001,                         // 'I'
             B00000000, B11111111, B00100000, B00010000, B00001000, B11111111    // 'N'
     };
+    int i = 0, j = 0;
+    int soundfreq = TONE_MINLEVEL;
+
+    delay(DELAY_GAMEOVER);
+    lc.clearDisplay(0);
+    while (j < FIELD_SIZE) {
+        lc.setLed(0, i, j, true);
+        tone(TONE_PIN, soundfreq, TONE_DURATION);
+        soundfreq += TONE_GAP;
+        delay(TONE_DURATION + TONE_CORRECTION);
+        if (i == FIELD_SIZE - 1) {
+            i = 0;
+            j++;
+        } else {
+            i++;
+        }
+    }
+    lc.clearDisplay(0);
 
     output_ledstr(str_gameover, STR_GAMEOVER_LENGTH);
     gameover = false;
