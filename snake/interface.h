@@ -1,5 +1,4 @@
-#ifndef INTERFACE_H
-#define INTERFACE_H
+#pragma once
 
 #include "constants.h"
 
@@ -14,5 +13,3 @@ void show_screen(byte screen[FIELD_SIZE]);
 // controls
 void get_direction();
 void get_skipcond();
-
-#endif

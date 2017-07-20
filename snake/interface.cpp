@@ -1,6 +1,6 @@
 #include <stdlib.h>
 #include <stdbool.h>
-#include <LedControl.h>
+#include "LedControl.h"
 #include "interface.h"
 #include "constants.h"
 #include "common.h"
