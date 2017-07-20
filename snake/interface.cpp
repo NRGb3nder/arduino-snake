@@ -99,7 +99,6 @@ void gameover_sequence() {
         continue_flag = false;
 }
 
-
 void output_ledstr(byte str_output[], int strsize) {
     int i, j;
     byte screen[FIELD_SIZE];

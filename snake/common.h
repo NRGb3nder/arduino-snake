@@ -21,3 +21,5 @@ typedef struct {
     position head;
     int sound_frequency;
 } player;
+
+void playsound_apple();

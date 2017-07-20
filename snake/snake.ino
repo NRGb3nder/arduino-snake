@@ -12,10 +12,10 @@ void setup() {
     gameover = false;
     gamestarted = false;
     continue_flag = false;
-    setup_led;
-    initialize_field;
+    setup_led();
+    initialize_field();
     snake = {START_LENGTH, GO_UP, {START_ROW, START_COLUMN}, TONE_MINLEVEL};
-    create_apple;
+    create_apple();
 }
 
 void loop() {
@@ -23,15 +23,20 @@ void loop() {
         setup;
     else
         while (!gamestarted)
-            startgame_sequence;
+            startgame_sequence();
     while (!gameover) {
-        get_direction;
-        refresh_field;
-        move_snake;
+        get_direction();
+        refresh_field();
+        move_snake();
         if (!gameover) {
-            show_field;
+            show_field();
             delay(DELAY_GENERAL);
         }
     }
-    gameover_sequence;
+    gameover_sequence();
 }
+
+void playsound_apple() {
+  tone(TONE_PIN, snake.sound_frequency, TONE_DURATION);
+}
+

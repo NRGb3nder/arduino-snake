@@ -1,4 +1,4 @@
-#include <math.h>
+#include <stdlib.h> 
 #include <stdbool.h>
 #include "fieldgen.h"
 #include "constants.h"
@@ -92,7 +92,7 @@ void eat_apple() {
                 field[i][j].time_to_live++;
         }
 
-    tone(TONE_PIN, snake.sound_frequency, TONE_DURATION);
+    playsound_apple();
     snake.sound_frequency += TONE_GAP;
 
     field[snake.head.row][snake.head.column].has_apple = false;
