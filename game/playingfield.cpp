@@ -2,7 +2,7 @@
 #include "playingfield.hpp"
 #include "snake.hpp"
 
-const int PIN_UNCONNECTED = 9; // any pin that will always be unconnected
+const int PIN_UNCONNECTED = 9; // any pin that will always remain unconnected
 const int NOT_EMPTY = -1;
 const int RESULT_VICTORY = 1;
 
@@ -31,9 +31,8 @@ int Field::createApple()
     int j;
     int freeCellsQuantity = 0;
     int appleCell;
-    Position *freeCells;
-    freeCells = new Position [FIELD_SIZE * FIELD_SIZE - player.getLength()];
-    
+    Position freeCells [FIELD_SIZE * FIELD_SIZE - player.getLength()];
+
     for (i = 0; i < FIELD_SIZE; i++) {
         for (j = 0; j < FIELD_SIZE; j++) {
             if (fCellField[i][j].lifetime == 0) {
@@ -43,14 +42,12 @@ int Field::createApple()
         }
     }
     if (freeCellsQuantity == 0) {
-        delete[] freeCells;
         return RESULT_VICTORY;
     } else {
         appleCell = random(0, freeCellsQuantity);
         i = freeCells[appleCell].row;
         j = freeCells[appleCell].column;
         fCellField[i][j].hasApple = true;
-        delete[] freeCells;
         return 0;
     }
 }
